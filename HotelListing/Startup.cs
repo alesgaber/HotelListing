@@ -11,6 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HotelListing.Configurations;
+using HotelListing.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace HotelListing
 {
@@ -26,6 +29,13 @@ namespace HotelListing
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            //DBContext
+            services.AddDbContext<DatabaseContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("sqlConnection")));
+
+            //AutoMapper
+            services.AddAutoMapper(typeof(AutoMapperInitializer));
+            
             //configure CORS policy
             services.AddCors(options =>
             {
