@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using HotelListing.Configurations;
 using HotelListing.Data;
+using HotelListing.IRepository;
+using HotelListing.Repository;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace HotelListing
 {
@@ -31,11 +34,14 @@ namespace HotelListing
         {
             //DBContext
             services.AddDbContext<DatabaseContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("sqlConnection")));
+                options.UseSqlServer(Configuration.GetConnectionString("sqlConnection")).EnableSensitiveDataLogging().LogTo(Console.WriteLine));
 
             //AutoMapper
             services.AddAutoMapper(typeof(AutoMapperInitializer));
-            
+
+            //UnitOfWork
+            services.AddTransient<IUnitOfWork, UnitOfWork>();
+
             //configure CORS policy
             services.AddCors(options =>
             {
@@ -48,7 +54,8 @@ namespace HotelListing
                     }
                 );
             });
-            services.AddControllers();
+            //JSON options
+            services.AddControllers().AddNewtonsoftJson(op => op.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "HotelListing", Version = "v1" });
