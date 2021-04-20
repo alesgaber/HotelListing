@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AspNetCoreRateLimit;
 using HotelListing.Data;
 using HotelListing.Models;
+using Marvin.Cache.Headers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
@@ -91,5 +93,42 @@ namespace HotelListing
                 opt.ApiVersionReader = new HeaderApiVersionReader("api-version");
             });
         }
+
+        public static void ConfigureHttpCacheHeaders(this IServiceCollection service)
+        {
+            service.AddResponseCaching();
+            service.AddHttpCacheHeaders(
+                expirationOpt =>
+                {
+                    expirationOpt.MaxAge = 120;
+                    expirationOpt.CacheLocation = CacheLocation.Private;
+                },
+                (validationOpt) =>
+                {
+                    validationOpt.MustRevalidate = true;
+                });
+        }
+
+        public static void ConfigureRateLimiting(this IServiceCollection service)
+        {
+            var rateLimitRules = new List<RateLimitRule>
+            {
+                new RateLimitRule
+                {
+                    Endpoint = "*",
+                    Limit = 1,
+                    Period = "5s"
+                }
+            };
+            service.Configure<IpRateLimitOptions>(opt =>
+            {
+                opt.GeneralRules = rateLimitRules;
+            });
+
+            service.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+            service.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+            service.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+        }
+
     }
 }

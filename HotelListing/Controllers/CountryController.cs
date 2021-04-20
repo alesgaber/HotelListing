@@ -8,6 +8,7 @@ using AutoMapper;
 using HotelListing.Data;
 using HotelListing.IRepository;
 using HotelListing.Models;
+using Marvin.Cache.Headers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -29,6 +30,7 @@ namespace HotelListing.Controllers
         }
 
         [HttpGet]
+        [HttpCacheExpiration(CacheLocation = CacheLocation.Public, MaxAge = 60)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetCounties([FromQuery] RequestParams requestParams)

@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetCoreRateLimit;
 using HotelListing.Configurations;
 using HotelListing.Data;
 using HotelListing.IRepository;
@@ -38,6 +39,15 @@ namespace HotelListing
             services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("sqlConnection")).EnableSensitiveDataLogging().LogTo(Console.WriteLine));
 
+
+            services.AddMemoryCache();
+
+            //limit rate
+            services.ConfigureRateLimiting();
+            services.AddHttpContextAccessor();
+
+            services.ConfigureHttpCacheHeaders();
+
             services.AddAuthentication();
             services.ConfigureIdentity();
             services.ConfigureJWT(Configuration);
@@ -62,7 +72,13 @@ namespace HotelListing
                 );
             });
             //JSON options
-            services.AddControllers().AddNewtonsoftJson(op => op.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+            services.AddControllers(config =>
+            {
+                config.CacheProfiles.Add("120SecondDuration", new CacheProfile
+                {
+                    Duration = 120,
+                });
+            }).AddNewtonsoftJson(op => op.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "HotelListing", Version = "v1" });
@@ -85,6 +101,13 @@ namespace HotelListing
             app.UseHttpsRedirection();
 
             app.UseCors("AllowAll");
+
+            app.UseResponseCaching();
+            app.UseHttpCacheHeaders();
+
+            //rate limit
+            app.UseIpRateLimiting();
+
 
             app.UseRouting();
 
