@@ -5,7 +5,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using HotelListing.Data;
 using HotelListing.IRepository;
+using HotelListing.Models;
 using Microsoft.EntityFrameworkCore;
+using X.PagedList;
 
 namespace HotelListing.Repository
 {
@@ -27,6 +29,23 @@ namespace HotelListing.Repository
         public void DeleteRange(IEnumerable<T> entities)
         {
             _db.RemoveRange(entities);
+        }
+
+        public async Task<IPagedList<T>> GetPagedList(RequestParams requestParams, List<string> includes = null)
+        {
+            IQueryable<T> query = _db;
+          
+
+            if (includes != null)
+            {
+                foreach (var includeProperty in includes )
+                {
+                    query = query.Include(includeProperty);
+                }
+            }
+            
+            return await query.AsNoTracking().ToPagedListAsync(requestParams.PageNumber, requestParams.PageSize);
+
         }
 
         public async Task<T> Get(System.Linq.Expressions.Expression<Func<T, bool>> expression, List<string> includes = null)
